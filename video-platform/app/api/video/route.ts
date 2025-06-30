@@ -28,8 +28,10 @@ export async function POST(request: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
     await connectToDatabase();
     const body: IVideo = await request.json();
+
     if (
       !body.title ||
       !body.description ||
@@ -38,18 +40,20 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Missing required field" },
-        { status: 201 }
+        { status: 400 }
       );
     }
+
     const videoData = {
       ...body,
       controls: body.controls ?? true,
       transformation: {
-        height: 1920,
-        width: 1080,
-        quality: body.transformation?.quality ?? 100,
+        height: body.transformation?.height,
+        width: body.transformation?.width,
+        quality: body.transformation?.quality,
       },
     };
+
     const newVideo = await Video.create(videoData);
     return NextResponse.json(newVideo, { status: 201 });
   } catch (error) {
