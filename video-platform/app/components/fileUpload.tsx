@@ -118,6 +118,7 @@ const FileUpload = ({ onBack }: FileUploadProps) => {
           thumbnailUrl:
             videoData.uploadResponse.thumbnailUrl ||
             videoData.uploadResponse.url,
+          fileId: videoData.uploadResponse.fileId, // Add fileId for ImageKit deletion
         }),
       });
 
