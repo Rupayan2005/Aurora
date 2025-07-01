@@ -26,6 +26,7 @@ interface Video {
   thumbnailUrl: string;
   createdAt: string;
   updatedAt: string;
+  userId: string; // Add userId field
   controls?: boolean;
   transformation?: {
     height: number;
@@ -49,6 +50,7 @@ export default function DashboardPage() {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
   useEffect(() => {
     if (session) {
@@ -56,9 +58,19 @@ export default function DashboardPage() {
     }
   }, [session]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setActiveDropdown(null);
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
   const fetchVideos = async () => {
     try {
-      const response = await fetch("/api/video");
+      // Fetch only user's videos by passing user ID as query parameter
+      const response = await fetch(`/api/video?userId=${session?.user?.id}`);
       if (response.ok) {
         const videosData = await response.json();
         setVideos(videosData);
@@ -93,13 +105,24 @@ export default function DashboardPage() {
     setShowVideoModal(true);
   };
 
-  const deleteVideo = async (videoId: string) => {
+  const toggleDropdown = (videoId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveDropdown(activeDropdown === videoId ? null : videoId);
+  };
+
+  const deleteVideo = async (videoId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    
     try {
       const response = await fetch(`/api/video/${videoId}`, {
         method: "DELETE",
       });
       if (response.ok) {
         setVideos(videos.filter((v) => v._id !== videoId));
+        setActiveDropdown(null);
+        if (selectedVideo?._id === videoId) {
+          setShowVideoModal(false);
+        }
       }
     } catch (error) {
       console.error("Failed to delete video:", error);
@@ -274,7 +297,6 @@ export default function DashboardPage() {
                 : "space-y-4"
             }
           >
-            {" "}
             {filteredVideos.map((video, index) => (
               <motion.div
                 key={video._id}
@@ -283,11 +305,41 @@ export default function DashboardPage() {
                 transition={{ delay: index * 0.1 }}
                 className={
                   viewMode === "grid"
-                    ? "bg-slate-800/50 backdrop-blur-sm rounded-xl overflow-hidden border border-slate-700/50 hover:border-slate-600/50 transition-all group cursor-pointer"
-                    : "bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50 hover:border-slate-600/50 transition-all group flex items-center space-x-4 cursor-pointer"
+                    ? "bg-slate-800/50 backdrop-blur-sm rounded-xl overflow-hidden border border-slate-700/50 hover:border-slate-600/50 transition-all group cursor-pointer relative"
+                    : "bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50 hover:border-slate-600/50 transition-all group flex items-center space-x-4 cursor-pointer relative"
                 }
                 onClick={() => handleVideoClick(video)}
               >
+                {/* Three-dot menu button */}
+                <div className="absolute top-2 right-2 z-10">
+                  <button
+                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/80 rounded-lg transition-all backdrop-blur-sm"
+                    onClick={(e) => toggleDropdown(video._id, e)}
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                  
+                  {/* Dropdown menu */}
+                  <AnimatePresence>
+                    {activeDropdown === video._id && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        className="absolute right-0 mt-1 w-40 bg-slate-800 rounded-lg shadow-lg border border-slate-700 overflow-hidden"
+                      >
+                        <button
+                          onClick={(e) => deleteVideo(video._id, e)}
+                          className="flex items-center space-x-2 w-full text-left px-3 py-2 text-red-400 hover:bg-slate-700 transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Delete</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
                 {viewMode === "grid" ? (
                   <>
                     <div className="relative aspect-video bg-slate-700 group-hover:bg-slate-600 transition-all">
@@ -351,15 +403,6 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     </div>
-                    <button
-                      className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Add menu functionality here
-                      }}
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
                   </>
                 )}
               </motion.div>
@@ -418,7 +461,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </motion.div>
-            </motion.div>
+              </motion.div>
           )}
         </AnimatePresence>
       </div>
