@@ -13,6 +13,7 @@
     "@imagekit/next": "^2.1.2",
     "bcryptjs": "^3.0.2",
     "framer-motion": "^12.19.2",
+    "imagekit": "^6.0.0",
     "lucide-react": "^0.525.0",
     "mongoose": "^8.15.2",
     "next": "15.3.3",
