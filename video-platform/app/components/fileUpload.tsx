@@ -117,7 +117,7 @@ const FileUpload = ({ onBack }: FileUploadProps) => {
           videoUrl: videoData.uploadResponse.url,
           thumbnailUrl:
             videoData.uploadResponse.thumbnailUrl ||
-            videoData.uploadResponse.url,
+            `${videoData.uploadResponse.url}?tr=f-jpg,w-400,h-225`, // Generate thumbnail from video
           fileId: videoData.uploadResponse.fileId, // Add fileId for ImageKit deletion
         }),
       });
