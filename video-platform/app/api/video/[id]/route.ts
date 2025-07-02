@@ -14,7 +14,7 @@ const imagekit = new ImageKit({
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -23,7 +23,7 @@ export async function DELETE(
     }
 
     await connectToDatabase();
-    const videoId = params.id;
+    const { id: videoId } = await params;
 
     // First, find the video to get the fileId and verify ownership
     const video = await Video.findById(videoId);
@@ -72,11 +72,11 @@ export async function DELETE(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase();
-    const videoId = params.id;
+    const { id: videoId } = await params;
 
     const video = await Video.findById(videoId).lean();
     if (!video) {
